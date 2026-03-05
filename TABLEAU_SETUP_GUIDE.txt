@@ -1,0 +1,183 @@
+# Tableau Dashboard Setup Guide
+# Credit Card Risk Analytics — 6 Dashboard Descriptions
+# =====================================================================
+
+# Run python/risk_analysis.py FIRST to generate the T1-T6 CSV files.
+
+# =====================================================================
+# DASHBOARD 1: PORTFOLIO OVERVIEW
+# Data source: T1_portfolio_overview.csv
+# =====================================================================
+#
+# KPI Cards (Top Row):
+#   - Total Exposure        → SUM(statement_balance)
+#   - Delinquency Rate      → AVG(is_delinquent) format as %
+#   - Default Rate          → AVG(is_default) format as %
+#   - Avg Utilization       → AVG(utilization) format as %
+#
+# Chart A — DPD Bucket Bar Chart:
+#   Dimension : dpd_bucket
+#   Measure   : COUNT(card_id)
+#   Colors    : Green(0) → Yellow(1-29) → Orange(30-59) → Red(60-89) → Purple(90+)
+#
+# Chart B — Utilization Band Donut:
+#   Dimension : util_band
+#   Measure   : COUNT(card_id)
+#
+# Chart C — Payment Type Bar:
+#   Dimension : payment_type
+#   Measure   : COUNT(card_id)
+#
+# Filters: region, income_band, product_type, period_month (date range)
+
+
+# =====================================================================
+# DASHBOARD 2: MONTHLY DELINQUENCY TREND
+# Data source: T2_monthly_trend.csv
+# =====================================================================
+#
+# Chart A — Dual Axis (Bar + Line):
+#   Bars    : exposure (right axis, secondary)
+#   Line 1  : del_rate  (Delinquency 30+)  ← primary axis
+#   Line 2  : def_rate  (Default 90+)      ← primary axis
+#   x-axis  : period_month
+#
+# Chart B — Monthly Default Volume:
+#   x-axis  : period_month
+#   y-axis  : def90 (count of 90+ accounts)
+#   Color   : gradient by def_rate
+#
+# Calculated Field — MoM Change:
+#   RUNNING_AVG(SUM([del_rate])) minus LOOKUP(RUNNING_AVG(SUM([del_rate])), -1)
+#   Use for color: Red if positive (worsening), Green if negative (improving)
+
+
+# =====================================================================
+# DASHBOARD 3: VINTAGE CURVES
+# Data source: T3_vintage_curves.csv
+# =====================================================================
+#
+# cohort_month → Dimension (Color)
+# mob          → Dimension (x-axis)
+# default_rate → Measure (y-axis)
+#
+# Chart A — Vintage Default Rate Curves:
+#   Chart type  : Line chart
+#   x-axis      : mob (0 to 29)
+#   y-axis      : default_rate_pct
+#   Color       : cohort_month (one line per cohort)
+#   Tooltip     : cohort_month, mob, default_rate, accounts
+#
+# Chart B — Vintage Comparison at MOB 12 (bar chart):
+#   x-axis : cohort_month
+#   y-axis : default_rate where mob = 12
+#   Color  : gradient (low → high default rate)
+#
+# Chart C — Delinquency Rate heatmap (cohort × MOB):
+#   Rows    : cohort_month
+#   Columns : mob
+#   Color   : delinquency_rate
+#   Tooltip : accounts, defaulted, delinquency_rate
+
+
+# =====================================================================
+# DASHBOARD 4: ROLL RATE HEATMAP
+# Data source: T4_roll_rate_matrix.csv
+# =====================================================================
+#
+# Pivot the data in Tableau or use pre-pivoted format.
+#
+# Chart A — Roll Rate Heatmap:
+#   Rows    : dpd_bucket  (current bucket)
+#   Columns : next_bucket (destination bucket)
+#   Color   : roll_rate % (0=white, 100=dark red)
+#   Label   : roll_rate formatted as X.X%
+#
+#   Read as: "Of all accounts in bucket X this month,
+#             Y% moved to bucket Z next month"
+#
+# Chart B — Forward Roll Rate Trend (Line):
+#   Filter  : next_bucket IN ('30-59','60-89','90+')
+#             current_bucket = '0' or '1-29'
+#   This shows what % of current/watch-list accounts
+#   are rolling into delinquency each month.
+#
+# Key Insight to annotate:
+#   90+ → 0 = CURE RATE (how many defaulters recovered)
+#   0 → 30-59 = NEW DELINQUENCY RATE
+
+
+# =====================================================================
+# DASHBOARD 5: UTILIZATION SEGMENTS
+# Data source: T5_utilization_segments.csv
+# =====================================================================
+#
+# Chart A — Delinquency Rate by Region (Horizontal Bar):
+#   Rows    : region
+#   Columns : AVG(del_rate) * 100
+#   Color   : del_rate gradient
+#   Sort    : descending by del_rate
+#
+# Chart B — Utilization vs Delinquency by Income Band:
+#   Type    : Scatter plot OR grouped bar
+#   x-axis  : avg_util
+#   y-axis  : del_rate
+#   Color   : income_band
+#   Size    : accounts
+#
+# Chart C — Product Risk Heatmap:
+#   Rows    : product_type
+#   Columns : income_band
+#   Color   : del_rate
+#   Label   : del_rate as %
+#
+# Chart D — Exposure by Segment Treemap:
+#   Dimension : region + income_band
+#   Measure   : exposure (SUM)
+#   Color     : del_rate
+
+
+# =====================================================================
+# DASHBOARD 6: EXPECTED LOSS BREAKDOWN
+# Data source: T6_expected_loss.csv
+# =====================================================================
+#
+# KPI Cards:
+#   - Total Expected Loss   → SUM(expected_loss)
+#   - Avg PD Score          → AVG(pd_score) format as %
+#   - LGD                   → Average LGD (79.78% from writeoffs)
+#   - EL Rate               → SUM(expected_loss) / SUM(ead)
+#
+# Chart A — IFRS 9 Stage Distribution (Donut):
+#   Dimension : ifrs9_stage
+#   Measure   : COUNT(card_id)
+#   Colors    : Stage1=Green, Stage2=Orange, Stage3=Red
+#
+# Chart B — Expected Loss by Stage (Bar):
+#   Dimension : ifrs9_stage
+#   Measure   : SUM(expected_loss)
+#
+# Chart C — PD Score Distribution (Histogram):
+#   Dimension : pd_score  (bin size 0.05)
+#   Measure   : COUNT(card_id)
+#   Reference lines at 0.20 (Stage 2) and 0.60 (Stage 3)
+#
+# Chart D — Top 50 Highest EL Accounts (Table):
+#   Columns : card_id, region, product_type, ead, pd_score,
+#             expected_loss, el_rate_pct, ifrs9_stage
+#   Filter  : TOP 50 by expected_loss
+#   Color   : ifrs9_stage
+#   Sort    : expected_loss DESC
+#
+# Chart E — EL by Product × Income Heatmap:
+#   Rows    : product_type
+#   Columns : income_band
+#   Color   : AVG(el_rate_pct)
+
+
+# =====================================================================
+# PUBLISHING
+# =====================================================================
+# Save as .twbx (Tableau Packaged Workbook) to include data.
+# Publish to Tableau Public for free portfolio hosting.
+# URL format: public.tableau.com/app/profile/YOUR_NAME

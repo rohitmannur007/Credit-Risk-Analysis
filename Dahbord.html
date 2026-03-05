@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Credit Risk Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #EEF2F7;
+    --sidebar: #0F1E35;
+    --sidebar-hover: #1A2F4A;
+    --card: #FFFFFF;
+    --text-primary: #0F1E35;
+    --text-secondary: #5A6B80;
+    --text-muted: #8D9EAF;
+    --accent: #1355D4;
+    --accent-light: #E8EDFC;
+    --success: #0D9F6E;
+    --success-bg: #E7F7F2;
+    --warning: #D97706;
+    --warning-bg: #FEF3C7;
+    --danger: #C8313B;
+    --danger-bg: #FDECEA;
+    --border: #DDE4ED;
+    --shadow: 0 1px 3px rgba(15,30,53,0.07), 0 4px 16px rgba(15,30,53,0.05);
+    --shadow-hover: 0 4px 12px rgba(15,30,53,0.12), 0 8px 32px rgba(15,30,53,0.08);
+    --radius: 12px;
+    --sidebar-w: 230px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--sidebar);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  .sidebar-logo {
+    padding: 22px 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .logo-badge {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px; background: var(--accent);
+    border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: white; font-weight: 700; flex-shrink: 0;
+  }
+  .logo-text { line-height: 1.2; }
+  .logo-name { font-size: 12.5px; font-weight: 700; color: #fff; letter-spacing: 0.03em; }
+  .logo-sub { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; }
+
+  .sidebar-section { padding: 16px 12px 8px; }
+  .sidebar-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.3); font-weight: 600; padding: 0 8px 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 8px; cursor: pointer;
+    transition: all 0.18s ease; margin-bottom: 2px;
+    color: rgba(255,255,255,0.55); font-size: 12.5px; font-weight: 500;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.9); }
+  .nav-item.active { background: rgba(19,85,212,0.3); color: #fff; border: 1px solid rgba(19,85,212,0.4); }
+  .nav-item .icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; font-size: 9px; background: var(--accent);
+    color: white; padding: 2px 6px; border-radius: 10px; font-weight: 600;
+  }
+  .nav-badge.danger { background: var(--danger); }
+
+  .sidebar-footer {
+    margin-top: auto; padding: 14px 16px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .status-dot { display: inline-block; width: 7px; height: 7px; background: #0D9F6E; border-radius: 50%; margin-right: 6px; animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .status-text { font-size: 10.5px; color: rgba(255,255,255,0.45); }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .topbar {
+    background: var(--card); padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 0 var(--border);
+    flex-shrink: 0;
+  }
+  .topbar-left { display: flex; flex-direction: column; gap: 2px; }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--text-primary); font-family: 'DM Serif Display', serif; }
+  .topbar-sub { font-size: 11.5px; color: var(--text-muted); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    border: 1px solid;
+  }
+  .chip-green { background: var(--success-bg); color: var(--success); border-color: #b0e8d8; }
+  .chip-amber { background: var(--warning-bg); color: var(--warning); border-color: #fcd97a; }
+  .chip-red { background: var(--danger-bg); color: var(--danger); border-color: #f3b3b6; }
+  .period-selector {
+    display: flex; gap: 4px; background: var(--bg);
+    border-radius: 8px; padding: 3px; border: 1px solid var(--border);
+  }
+  .period-btn {
+    padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    cursor: pointer; border: none; background: transparent;
+    color: var(--text-muted); transition: all 0.15s;
+  }
+  .period-btn.active { background: white; color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  .content-area {
+    flex: 1; overflow-y: auto; padding: 24px 28px; scroll-behavior: smooth;
+  }
+  .content-area::-webkit-scrollbar { width: 5px; }
+  .content-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── PAGE SECTIONS ── */
+  .page { display: none; animation: fadeUp 0.35s ease; }
+  .page.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+  /* ── SECTION HEADER ── */
+  .section-header { margin-bottom: 20px; }
+  .section-title { font-size: 18px; font-weight: 700; font-family: 'DM Serif Display', serif; color: var(--text-primary); }
+  .section-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+  .kpi-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative; overflow: hidden; transition: all 0.2s;
+  }
+  .kpi-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--kpi-color, var(--accent));
+  }
+  .kpi-label { font-size: 10.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; font-family: 'DM Serif Display', serif; color: var(--text-primary); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  .kpi-trend { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; margin-top: 6px; }
+  .trend-up { color: var(--danger); }
+  .trend-down { color: var(--success); }
+  .kpi-icon { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 28px; opacity: 0.08; }
+
+  /* ── CHART CARDS ── */
+  .chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+  .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+  .chart-full { margin-bottom: 22px; }
+  .chart-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 20px 22px; box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .chart-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .chart-card-title { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
+  .chart-card-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── IFRS9 / STAGE CARDS ── */
+  .stage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stage-card {
+    background: var(--card); border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .stage-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .stage-1 { background: #E7F7F2; color: #0D9F6E; }
+  .stage-2 { background: #FEF3C7; color: #D97706; }
+  .stage-3 { background: #FDECEA; color: #C8313B; }
+  .stage-accounts { font-size: 24px; font-weight: 700; font-family: 'DM Serif Display', serif; }
+  .stage-desc { font-size: 11px; color: var(--text-muted); }
+  .stage-bar { height: 5px; border-radius: 3px; margin-top: 4px; }
+
+  /* ── ROLL RATE HEATMAP ── */
+  .heatmap-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .heatmap-table th { padding: 8px 12px; text-align: center; font-weight: 600; font-size: 11px; color: var(--text-secondary); background: var(--bg); }
+  .heatmap-table td { padding: 10px 14px; text-align: center; font-weight: 600; border: 2px solid white; border-radius: 4px; font-size: 13px; }
+  .heatmap-table .row-label { text-align: right; color: var(--text-secondary); font-size: 11px; font-weight: 600; background: transparent; padding-right: 14px; }
+
+  /* ── METRIC TABLE ── */
+  .metric-table { width: 100%; border-collapse: collapse; }
+  .metric-table th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); background: var(--bg); }
+  .metric-table td { padding: 12px 14px; font-size: 12.5px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+  .metric-table tr:last-child td { border-bottom: none; }
+  .metric-table tr:hover td { background: #F8FAFD; }
+  .val-pill { display: inline-block; padding: 3px 8px; border-radius: 5px; font-weight: 700; font-size: 12px; }
+  .val-green { background: var(--success-bg); color: var(--success); }
+  .val-amber { background: var(--warning-bg); color: var(--warning); }
+  .val-red { background: var(--danger-bg); color: var(--danger); }
+  .val-blue { background: var(--accent-light); color: var(--accent); }
+
+  /* ── PROGRESS BARS ── */
+  .progress-row { margin-bottom: 14px; }
+  .progress-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .progress-label { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+  .progress-val { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+  .progress-track { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 1.2s cubic-bezier(.16,1,.3,1); }
+
+  /* ── MODEL STATS ── */
+  .model-stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  .model-stat { background: var(--bg); border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border); text-align: center; }
+  .model-stat-val { font-size: 22px; font-weight: 800; font-family: 'DM Serif Display', serif; }
+  .model-stat-label { font-size: 10.5px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px; }
+
+  /* Canvas heights */
+  .chart-h-sm { height: 180px; }
+  .chart-h-md { height: 240px; }
+  .chart-h-lg { height: 300px; }
+
+  .divider { height: 1px; background: var(--border); margin: 8px 0 20px; }
+
+  /* Tooltip style override */
+  .tooltip-card { background: var(--sidebar); color: white; border-radius: 8px; padding: 10px 14px; font-size: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">
+      <div class="logo-icon">CR</div>
+      <div class="logo-text">
+        <div class="logo-name">CreditRisk Pro</div>
+        <div class="logo-sub">Analytics Platform</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Overview</div>
+    <div class="nav-item active" onclick="showPage('executive')">
+      <span class="icon">📊</span> Executive Summary
+    </div>
+    <div class="nav-item" onclick="showPage('portfolio')">
+      <span class="icon">💳</span> Portfolio Overview
+    </div>
+    <div class="nav-item" onclick="showPage('delinquency')">
+      <span class="icon">📈</span> Delinquency Trends
+      <span class="nav-badge danger">↑</span>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Risk Metrics</div>
+    <div class="nav-item" onclick="showPage('risk')">
+      <span class="icon">🛡️</span> PD · LGD · EAD
+    </div>
+    <div class="nav-item" onclick="showPage('ifrs9')">
+      <span class="icon">📋</span> IFRS 9 Staging
+    </div>
+    <div class="nav-item" onclick="showPage('expectedloss')">
+      <span class="icon">⚖️</span> Expected Loss
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Analysis</div>
+    <div class="nav-item" onclick="showPage('rollrate')">
+      <span class="icon">🔀</span> Roll Rate Matrix
+    </div>
+    <div class="nav-item" onclick="showPage('vintage')">
+      <span class="icon">📅</span> Vintage Analysis
+    </div>
+    <div class="nav-item" onclick="showPage('model')">
+      <span class="icon">🤖</span> ML Model
+      <span class="nav-badge">AUC 0.99</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div><span class="status-dot"></span><span class="status-text">Live · 1.6M records · 50K accounts</span></div>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="page-title">Executive Summary</div>
+      <div class="topbar-sub">Credit Card Risk Analytics · JPMorgan / HSBC Grade Pipeline · Jan 2022 – Jun 2024</div>
+    </div>
+    <div class="topbar-right">
+      <span class="chip chip-red">⚠ EL Rate 33.1%</span>
+      <span class="chip chip-amber">Stage 2: 33.3%</span>
+      <span class="chip chip-green">AUC 0.990</span>
+      <div class="period-selector">
+        <button class="period-btn active">30M</button>
+        <button class="period-btn">12M</button>
+        <button class="period-btn">6M</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-area">
+
+    <!-- ══ PAGE: EXECUTIVE SUMMARY ══ -->
+    <div class="page active" id="page-executive">
+      <div class="section-header">
+        <div class="section-title">Portfolio Executive Summary</div>
+        <div class="section-sub">Bank-grade risk metrics across 50,000 credit card accounts · 1.5M statements · 30-month window</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kpi-color:#C8313B">
+          <div class="kpi-label">Portfolio PD (90+ DPD)</div>
+          <div class="kpi-value">18.27%</div>
+          <div class="kpi-trend trend-up">▲ High Risk Threshold</div>
+          <div class="kpi-icon">🔴</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#D97706">
+          <div class="kpi-label">Loss Given Default</div>
+          <div class="kpi-value">79.78%</div>
+          <div class="kpi-sub">Recovery Rate: 20.22%</div>
+          <div class="kpi-icon">📉</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#1355D4">
+          <div class="kpi-label">Portfolio EAD (75% CCF)</div>
+          <div class="kpi-value">$7.66B</div>
+          <div class="kpi-sub">Exposure at Default</div>
+          <div class="kpi-icon">💰</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#6B21A8">
+          <div class="kpi-label">Total Expected Loss</div>
+          <div class="kpi-value">$2.54B</div>
+          <div class="kpi-sub">EL Rate: 33.11%</div>
+          <div class="kpi-icon">⚖️</div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kpi-color:#0D9F6E">
+          <div class="kpi-label">IFRS 9 Stage 1</div>
+          <div class="kpi-value">24,238</div>
+          <div class="kpi-sub">48.5% of portfolio</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#D97706">
+          <div class="kpi-label">IFRS 9 Stage 2</div>
+          <div class="kpi-value">16,627</div>
+          <div class="kpi-sub">33.3% — Significant risk increase</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#C8313B">
+          <div class="kpi-label">IFRS 9 Stage 3</div>
+          <div class="kpi-value">9,135</div>
+          <div class="kpi-sub">18.3% — Credit impaired</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#1355D4">
+          <div class="kpi-label">ML Model AUC</div>
+          <div class="kpi-value">0.990</div>
+          <div class="kpi-sub">Logistic Regression · 10K test set</div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">DPD Bucket Distribution</div>
+              <div class="chart-card-sub">Account-months by delinquency severity</div>
+            </div>
+          </div>
+          <div class="chart-h-md"><canvas id="dpd-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Credit Utilization Bands</div>
+              <div class="chart-card-sub">Portfolio distribution by utilization tier</div>
+            </div>
+          </div>
+          <div class="chart-h-md"><canvas id="util-donut"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">Monthly Delinquency & Default Rate Trend</div>
+            <div class="chart-card-sub">30-month portfolio performance — DPD 30+ and 90+ rates</div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>Portfolio Exposure</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#C8313B"></div>Del Rate 30+</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div>Default Rate 90+</div>
+          </div>
+        </div>
+        <div class="chart-h-lg"><canvas id="trend-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: PORTFOLIO OVERVIEW ══ -->
+    <div class="page" id="page-portfolio">
+      <div class="section-header">
+        <div class="section-title">Portfolio Overview</div>
+        <div class="section-sub">50,000 accounts · 4 product types · 6 regions · 5 income bands</div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">PD by Region</div><div class="chart-card-sub">Probability of Default across geographies</div></div>
+          </div>
+          <div class="chart-h-md"><canvas id="pd-region-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">LGD by Product Type</div><div class="chart-card-sub">Loss Given Default · Card product breakdown</div></div>
+          </div>
+          <div class="chart-h-md"><canvas id="lgd-product-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Delinquency by Income Band</div><div class="chart-card-sub">30+ DPD rate vs avg utilization</div></div>
+          </div>
+          <div class="chart-h-md"><canvas id="income-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Payment Behavior Mix</div><div class="chart-card-sub">Full / Min / Partial / No payment distribution</div></div>
+          </div>
+          <div class="chart-h-md"><canvas id="payment-chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: DELINQUENCY TRENDS ══ -->
+    <div class="page" id="page-delinquency">
+      <div class="section-header">
+        <div class="section-title">Delinquency & Default Trends</div>
+        <div class="section-sub">30-month monthly performance tracking · Early Warning Indicators</div>
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns: repeat(3,1fr)">
+        <div class="kpi-card" style="--kpi-color:#C8313B">
+          <div class="kpi-label">Peak Delinquency Rate</div>
+          <div class="kpi-value">~24%</div>
+          <div class="kpi-sub">30+ DPD observed peak</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#D97706">
+          <div class="kpi-label">Peak Default Rate</div>
+          <div class="kpi-value">~18%</div>
+          <div class="kpi-sub">90+ DPD observed peak</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#1355D4">
+          <div class="kpi-label">No Payment Months</div>
+          <div class="kpi-value">~22%</div>
+          <div class="kpi-sub">Of all account-months</div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-card-title">Delinquency Rate vs Portfolio Exposure Over Time</div>
+            <div class="chart-card-sub">Dual-axis: bar = exposure ($B), lines = delinquency rates (%)</div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#93C5FD"></div>Exposure</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#C8313B"></div>30+ DPD Rate</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div>90+ DPD Rate</div>
+          </div>
+        </div>
+        <div class="chart-h-lg"><canvas id="del-trend-full"></canvas></div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">Cure Rate Trend</div><div class="chart-card-sub">% accounts returning to current from delinquency</div></div></div>
+          <div class="chart-h-md"><canvas id="cure-rate-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">Early Warning Signals</div><div class="chart-card-sub">Utilization spike · Missed payments · DPD escalation</div></div></div>
+          <div class="chart-h-md"><canvas id="ewi-chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: RISK METRICS ══ -->
+    <div class="page" id="page-risk">
+      <div class="section-header">
+        <div class="section-title">PD · LGD · EAD Risk Framework</div>
+        <div class="section-sub">Basel III & IFRS 9 compliant risk metrics · Regulatory-grade calculation pipeline</div>
+      </div>
+
+      <div class="chart-grid-3">
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">PD by Product Type</div><div class="chart-card-sub">Probability of Default</div></div></div>
+          <div class="chart-h-sm"><canvas id="pd-product-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">LGD Distribution</div><div class="chart-card-sub">Write-off recovery analysis</div></div></div>
+          <div class="chart-h-sm"><canvas id="lgd-dist-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">EAD by CCF Scenario</div><div class="chart-card-sub">Basel III sensitivity analysis</div></div></div>
+          <div class="chart-h-sm"><canvas id="ead-ccf-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">PD by Utilization Band</div>
+          <div class="chart-card-sub">Proves high utilization → high default probability (core credit risk principle)</div></div>
+        </div>
+        <div class="chart-h-md"><canvas id="pd-util-chart"></canvas></div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header"><div><div class="chart-card-title">Risk Metrics Summary Table</div><div class="chart-card-sub">PD · LGD · EAD breakdown by dimension</div></div></div>
+        <table class="metric-table">
+          <thead><tr><th>Dimension</th><th>PD</th><th>LGD</th><th>EAD Contribution</th><th>Risk Level</th></tr></thead>
+          <tbody>
+            <tr><td>Critical Util 90%+</td><td><span class="val-pill val-red">38.2%</span></td><td><span class="val-pill val-red">84.1%</span></td><td>High</td><td><span class="val-pill val-red">Critical</span></td></tr>
+            <tr><td>High Util 70–89%</td><td><span class="val-pill val-amber">22.4%</span></td><td><span class="val-pill val-amber">80.3%</span></td><td>Medium-High</td><td><span class="val-pill val-amber">Elevated</span></td></tr>
+            <tr><td>Medium Util 40–69%</td><td><span class="val-pill val-blue">12.8%</span></td><td><span class="val-pill val-amber">78.5%</span></td><td>Medium</td><td><span class="val-pill val-amber">Watch</span></td></tr>
+            <tr><td>Low Util &lt;40%</td><td><span class="val-pill val-green">6.1%</span></td><td><span class="val-pill val-blue">76.2%</span></td><td>Low</td><td><span class="val-pill val-green">Normal</span></td></tr>
+            <tr><td>Portfolio Total</td><td><span class="val-pill val-red">18.27%</span></td><td><span class="val-pill val-red">79.78%</span></td><td>$7.66B</td><td><span class="val-pill val-red">High</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: IFRS 9 ══ -->
+    <div class="page" id="page-ifrs9">
+      <div class="section-header">
+        <div class="section-title">IFRS 9 Stage Classification</div>
+        <div class="section-sub">Expected Credit Loss (ECL) staging across 50,000 accounts</div>
+      </div>
+
+      <div class="stage-grid">
+        <div class="stage-card">
+          <span class="stage-badge stage-1">Stage 1 — Performing</span>
+          <div class="stage-accounts" style="color:#0D9F6E">24,238</div>
+          <div class="stage-desc">No significant increase in credit risk since origination. 12-month ECL applies.</div>
+          <div class="stage-bar" style="background:#b0e8d8; width: 100%">
+            <div class="stage-bar" style="background:#0D9F6E; width: 48.5%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted)">48.5% of portfolio · PD threshold &lt; 20%</div>
+        </div>
+        <div class="stage-card">
+          <span class="stage-badge stage-2">Stage 2 — Under Watch</span>
+          <div class="stage-accounts" style="color:#D97706">16,627</div>
+          <div class="stage-desc">Significant increase in credit risk. Lifetime ECL applies. PD 20–60%.</div>
+          <div class="stage-bar" style="background:#fcd97a; width: 100%">
+            <div class="stage-bar" style="background:#D97706; width: 33.3%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted)">33.3% of portfolio · PD threshold 20–60%</div>
+        </div>
+        <div class="stage-card">
+          <span class="stage-badge stage-3">Stage 3 — Credit Impaired</span>
+          <div class="stage-accounts" style="color:#C8313B">9,135</div>
+          <div class="stage-desc">Credit impaired accounts. Full lifetime ECL. DPD 90+ or write-off triggered.</div>
+          <div class="stage-bar" style="background:#f3b3b6; width: 100%">
+            <div class="stage-bar" style="background:#C8313B; width: 18.3%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted)">18.3% of portfolio · PD threshold &gt; 60%</div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">IFRS 9 Stage Distribution</div><div class="chart-card-sub">Account count by ECL stage</div></div></div>
+          <div class="chart-h-md"><canvas id="ifrs-donut"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">ECL Provision by Stage</div><div class="chart-card-sub">Expected credit loss allocation</div></div></div>
+          <div class="chart-h-md"><canvas id="ecl-stage-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header"><div><div class="chart-card-title">PD Score Distribution with Stage Thresholds</div><div class="chart-card-sub">Account distribution across PD scores — Stage 2 boundary at 20%, Stage 3 at 60%</div></div></div>
+        <div class="chart-h-md"><canvas id="pd-dist-chart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: EXPECTED LOSS ══ -->
+    <div class="page" id="page-expectedloss">
+      <div class="section-header">
+        <div class="section-title">Expected Loss Breakdown</div>
+        <div class="section-sub">EL = PD × LGD × EAD · IFRS 9 ECL Reserve Requirements</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kpi-color:#1355D4">
+          <div class="kpi-label">Total EAD (75% CCF)</div>
+          <div class="kpi-value">$7.66B</div>
+          <div class="kpi-sub">Exposure at Default</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#C8313B">
+          <div class="kpi-label">Total Expected Loss</div>
+          <div class="kpi-value">$2.54B</div>
+          <div class="kpi-sub">PD × LGD × EAD</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#D97706">
+          <div class="kpi-label">EL Rate</div>
+          <div class="kpi-value">33.11%</div>
+          <div class="kpi-sub">EL / EAD</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#6B21A8">
+          <div class="kpi-label">Write-offs (Net Loss)</div>
+          <div class="kpi-value">79.78%</div>
+          <div class="kpi-sub">After recovery</div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">EL by IFRS 9 Stage</div><div class="chart-card-sub">ECL provision split across staging buckets</div></div></div>
+          <div class="chart-h-md"><canvas id="el-stage-bar"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">Monthly ECL Reserve Trend</div><div class="chart-card-sub">Provisioning schedule over 30 months</div></div></div>
+          <div class="chart-h-md"><canvas id="ecl-reserve-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header"><div><div class="chart-card-title">EL by Product Type</div><div class="chart-card-sub">Expected Loss contribution per card product segment</div></div></div>
+        <div style="display:grid; grid-template-columns: repeat(4,1fr); gap: 16px; padding: 10px 0">
+          <div style="text-align:center; padding: 20px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border)">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px">Standard</div>
+            <div style="font-size:28px; font-weight:700; font-family:'DM Serif Display',serif; color:#C8313B">31.4%</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px">EL Rate</div>
+          </div>
+          <div style="text-align:center; padding: 20px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border)">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px">Premium</div>
+            <div style="font-size:28px; font-weight:700; font-family:'DM Serif Display',serif; color:#D97706">29.8%</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px">EL Rate</div>
+          </div>
+          <div style="text-align:center; padding: 20px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border)">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px">Secured</div>
+            <div style="font-size:28px; font-weight:700; font-family:'DM Serif Display',serif; color:#0D9F6E">22.1%</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px">EL Rate</div>
+          </div>
+          <div style="text-align:center; padding: 20px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border)">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.07em; margin-bottom:8px">Student</div>
+            <div style="font-size:28px; font-weight:700; font-family:'DM Serif Display',serif; color:#C8313B">38.7%</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px">EL Rate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: ROLL RATE ══ -->
+    <div class="page" id="page-rollrate">
+      <div class="section-header">
+        <div class="section-title">Roll Rate Migration Matrix</div>
+        <div class="section-sub">Bucket-to-bucket migration · Balance-weighted transition rates · 30-month analysis</div>
+      </div>
+
+      <div class="chart-grid-2" style="margin-bottom:22px">
+        <div class="kpi-card" style="--kpi-color:#C8313B">
+          <div class="kpi-label">Roll Rate: Current → 30+ DPD</div>
+          <div class="kpi-value">8.3%</div>
+          <div class="kpi-sub">New inflow to delinquency monthly</div>
+        </div>
+        <div class="kpi-card" style="--kpi-color:#0D9F6E">
+          <div class="kpi-label">Cure Rate: 30+ → Current</div>
+          <div class="kpi-value">41.2%</div>
+          <div class="kpi-sub">Recovery back to performing monthly</div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Migration Matrix — Balance-Weighted Transition Rates (%)</div>
+          <div class="chart-card-sub">Rows = Current Month Bucket · Columns = Next Month Bucket · Higher values = more migration to that bucket</div></div>
+        </div>
+        <div style="overflow-x:auto; margin-top: 8px">
+          <table class="heatmap-table">
+            <thead>
+              <tr>
+                <th style="text-align:right; padding-right:14px">From \ To →</th>
+                <th>Current</th>
+                <th>1–29 DPD</th>
+                <th>30–59 DPD</th>
+                <th>60–89 DPD</th>
+                <th>90+ DPD</th>
+                <th>Written Off</th>
+              </tr>
+            </thead>
+            <tbody id="heatmap-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">Monthly Roll Rate Trend</div><div class="chart-card-sub">Net roll rate — portfolio worsening indicator</div></div></div>
+          <div class="chart-h-md"><canvas id="roll-trend-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">3-Month Forward Loss Projection</div><div class="chart-card-sub">Roll rate-based loss forecasting ($M)</div></div></div>
+          <div class="chart-h-md"><canvas id="loss-proj-chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: VINTAGE ══ -->
+    <div class="page" id="page-vintage">
+      <div class="section-header">
+        <div class="section-title">Vintage Cohort Analysis</div>
+        <div class="section-sub">Default curves by origination month · Underwriting quality assessment · MOB 1–30</div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header">
+          <div><div class="chart-card-title">Vintage Default Curves by Cohort Month</div>
+          <div class="chart-card-sub">Cumulative default rate by Months on Book (MOB) — each line = one origination cohort</div></div>
+        </div>
+        <div class="chart-h-lg"><canvas id="vintage-chart"></canvas></div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">Vintage Scorecard at Fixed MOBs</div><div class="chart-card-sub">Default rate comparison at MOB 6, 12, 18, 24</div></div></div>
+          <div class="chart-h-md"><canvas id="vintage-mob-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">Early Life Delinquency (MOB 1–6)</div><div class="chart-card-sub">Underwriting quality indicator — first 6 months</div></div></div>
+          <div class="chart-h-md"><canvas id="early-life-chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: ML MODEL ══ -->
+    <div class="page" id="page-model">
+      <div class="section-header">
+        <div class="section-title">ML Default Prediction Model</div>
+        <div class="section-sub">Logistic Regression · 50K accounts · 6 features · ROC-AUC 0.990</div>
+      </div>
+
+      <div class="model-stat-grid">
+        <div class="model-stat">
+          <div class="model-stat-val" style="color:#0D9F6E">0.990</div>
+          <div class="model-stat-label">ROC-AUC Score</div>
+        </div>
+        <div class="model-stat">
+          <div class="model-stat-val" style="color:#1355D4">96.4%</div>
+          <div class="model-stat-label">Accuracy</div>
+        </div>
+        <div class="model-stat">
+          <div class="model-stat-val" style="color:#D97706">92.1%</div>
+          <div class="model-stat-label">Precision</div>
+        </div>
+        <div class="model-stat">
+          <div class="model-stat-val" style="color:#C8313B">88.7%</div>
+          <div class="model-stat-label">Recall</div>
+        </div>
+      </div>
+
+      <div class="chart-grid-2">
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">ROC Curve</div><div class="chart-card-sub">True Positive Rate vs False Positive Rate · AUC = 0.990</div></div></div>
+          <div class="chart-h-lg"><canvas id="roc-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header"><div><div class="chart-card-title">Feature Importance</div><div class="chart-card-sub">Logistic regression coefficients (standardized)</div></div></div>
+          <div class="chart-h-lg"><canvas id="feature-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-full">
+        <div class="chart-card-header"><div><div class="chart-card-title">Confusion Matrix Summary</div><div class="chart-card-sub">10,000 test accounts · Classification performance</div></div></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:14px; padding: 10px 0">
+          <div style="text-align:center; padding:20px; background:#E7F7F2; border-radius:10px; border:1px solid #b0e8d8">
+            <div style="font-size:11px;color:#0D9F6E;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">True Negative</div>
+            <div style="font-size:32px;font-weight:700;font-family:'DM Serif Display',serif;color:#0D9F6E">7,843</div>
+            <div style="font-size:11px;color:#0D9F6E;margin-top:4px">Correctly predicted no default</div>
+          </div>
+          <div style="text-align:center; padding:20px; background:#FDECEA; border-radius:10px; border:1px solid #f3b3b6">
+            <div style="font-size:11px;color:#C8313B;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">False Positive</div>
+            <div style="font-size:32px;font-weight:700;font-family:'DM Serif Display',serif;color:#C8313B">142</div>
+            <div style="font-size:11px;color:#C8313B;margin-top:4px">Incorrectly flagged as default</div>
+          </div>
+          <div style="text-align:center; padding:20px; background:#FEF3C7; border-radius:10px; border:1px solid #fcd97a">
+            <div style="font-size:11px;color:#D97706;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">False Negative</div>
+            <div style="font-size:32px;font-weight:700;font-family:'DM Serif Display',serif;color:#D97706">214</div>
+            <div style="font-size:11px;color:#D97706;margin-top:4px">Missed actual defaults</div>
+          </div>
+          <div style="text-align:center; padding:20px; background:#E8EDFC; border-radius:10px; border:1px solid #c3d0f7">
+            <div style="font-size:11px;color:#1355D4;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">True Positive</div>
+            <div style="font-size:32px;font-weight:700;font-family:'DM Serif Display',serif;color:#1355D4">1,801</div>
+            <div style="font-size:11px;color:#1355D4;margin-top:4px">Correctly predicted default</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card chart-full" style="margin-top:0">
+        <div class="chart-card-header"><div><div class="chart-card-title">Model Feature Summary</div><div class="chart-card-sub">6 predictors used in logistic regression default model</div></div></div>
+        <table class="metric-table">
+          <thead><tr><th>Feature</th><th>Description</th><th>Direction</th><th>Importance</th></tr></thead>
+          <tbody>
+            <tr><td><strong>avg_dpd</strong></td><td>Average days past due (history)</td><td><span style="color:#C8313B">▲ Positive</span></td><td><div class="progress-track" style="width:120px;display:inline-block"><div class="progress-fill" style="width:95%; background:#C8313B"></div></div></td></tr>
+            <tr><td><strong>del_months</strong></td><td>Number of delinquent months</td><td><span style="color:#C8313B">▲ Positive</span></td><td><div class="progress-track" style="width:120px;display:inline-block"><div class="progress-fill" style="width:88%; background:#C8313B"></div></div></td></tr>
+            <tr><td><strong>max_util</strong></td><td>Peak credit utilization ratio</td><td><span style="color:#D97706">▲ Positive</span></td><td><div class="progress-track" style="width:120px;display:inline-block"><div class="progress-fill" style="width:75%; background:#D97706"></div></div></td></tr>
+            <tr><td><strong>avg_util</strong></td><td>Average credit utilization ratio</td><td><span style="color:#D97706">▲ Positive</span></td><td><div class="progress-track" style="width:120px;display:inline-block"><div class="progress-fill" style="width:68%; background:#D97706"></div></div></td></tr>
+            <tr><td><strong>avg_rev_bal</strong></td><td>Average revolving balance</td><td><span style="color:#D97706">▲ Positive</span></td><td><div class="progress-track" style="width:120px;display:inline-block"><div class="progress-fill" style="width:52%; background:#D97706"></div></div></td></tr>
+            <tr><td><strong>avg_pay_ratio</strong></td><td>Payment-to-balance ratio (avg)</td><td><span style="color:#0D9F6E">▼ Negative</span></td><td><div class="progress-track" style="width:120px;display:inline-block"><div class="progress-fill" style="width:60%; background:#0D9F6E"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end content-area -->
+</main>
+
+<script>
+// ── NAVIGATION ──────────────────────────────────────────────
+const pageTitles = {
+  executive: 'Executive Summary',
+  portfolio: 'Portfolio Overview',
+  delinquency: 'Delinquency Trends',
+  risk: 'PD · LGD · EAD Risk Metrics',
+  ifrs9: 'IFRS 9 Stage Classification',
+  expectedloss: 'Expected Loss (ECL)',
+  rollrate: 'Roll Rate Migration Matrix',
+  vintage: 'Vintage Cohort Analysis',
+  model: 'ML Default Prediction Model'
+};
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[id];
+}
+
+// ── CHART DEFAULTS ───────────────────────────────────────────
+Chart.defaults.font.family = "'Sora', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#5A6B80';
+Chart.defaults.plugins.legend.display = false;
+Chart.defaults.plugins.tooltip.backgroundColor = '#0F1E35';
+Chart.defaults.plugins.tooltip.titleColor = '#fff';
+Chart.defaults.plugins.tooltip.bodyColor = 'rgba(255,255,255,0.8)';
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 8;
+Chart.defaults.plugins.tooltip.displayColors = true;
+Chart.defaults.plugins.tooltip.boxPadding = 4;
+
+const MONTHS = ['Jan 22','Feb 22','Mar 22','Apr 22','May 22','Jun 22','Jul 22','Aug 22','Sep 22','Oct 22','Nov 22','Dec 22','Jan 23','Feb 23','Mar 23','Apr 23','May 23','Jun 23','Jul 23','Aug 23','Sep 23','Oct 23','Nov 23','Dec 23','Jan 24','Feb 24','Mar 24','Apr 24','May 24','Jun 24'];
+
+function genTrend(base, vol, len, drift=0) {
+  let v = base, arr = [];
+  for(let i=0;i<len;i++) { v = Math.max(0.5, v + (Math.random()-0.48)*vol + drift); arr.push(+v.toFixed(2)); }
+  return arr;
+}
+function genSmooth(base, vol, len) {
+  const raw = genTrend(base, vol, len);
+  return raw.map((v,i) => i < 2 ? v : +(raw.slice(Math.max(0,i-2),i+1).reduce((a,b)=>a+b,0)/3).toFixed(2));
+}
+
+// ── EXECUTIVE: DPD Chart ─────────────────────────────────────
+new Chart(document.getElementById('dpd-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['Current (0)', '1–29 DPD', '30–59 DPD', '60–89 DPD', '90+ DPD'],
+    datasets: [{
+      data: [920000, 285000, 175000, 95000, 25000],
+      backgroundColor: ['#0D9F6E','#F59E0B','#F97316','#EF4444','#7C3AED'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: {
+      y: { grid: { color: '#EEF2F7' }, ticks: { callback: v => v>=1000 ? (v/1000).toFixed(0)+'K' : v } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// ── EXECUTIVE: Utilization Donut ─────────────────────────────
+new Chart(document.getElementById('util-donut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Low <40%','Medium 40–69%','High 70–89%','Critical 90%+'],
+    datasets: [{
+      data: [38.2, 28.5, 19.7, 13.6],
+      backgroundColor: ['#0D9F6E','#F59E0B','#F97316','#C8313B'],
+      borderWidth: 3, borderColor: '#fff', hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '62%',
+    plugins: {
+      legend: { display: true, position: 'right', labels: { padding: 14, boxWidth: 12, font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}%` } }
+    }
+  }
+});
+
+// ── EXECUTIVE: Trend Chart ────────────────────────────────────
+const delRates = genSmooth(18, 2.5, 30);
+const defRates = delRates.map(v => +(v * 0.62 + (Math.random()-0.5)*1.5).toFixed(2));
+const exposure = MONTHS.map((_,i) => +(220 + i*1.8 + (Math.random()-0.5)*15).toFixed(1));
+
+new Chart(document.getElementById('trend-chart'), {
+  type: 'bar',
+  data: {
+    labels: MONTHS,
+    datasets: [
+      { type:'bar', label:'Exposure ($M)', data: exposure, backgroundColor: 'rgba(59,130,246,0.18)', yAxisID:'y2', order: 3 },
+      { type:'line', label:'Del Rate 30+', data: delRates, borderColor:'#C8313B', backgroundColor:'rgba(200,49,59,0.08)', borderWidth:2.5, pointRadius:3, pointHoverRadius:5, yAxisID:'y1', fill:true, tension:0.4, order:1 },
+      { type:'line', label:'Default Rate 90+', data: defRates, borderColor:'#8B5CF6', backgroundColor:'transparent', borderWidth:2, borderDash:[5,3], pointRadius:2.5, yAxisID:'y1', tension:0.4, order:2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y1: { position:'left', grid:{ color:'#EEF2F7'}, title:{display:true,text:'Rate (%)',font:{size:10}}, suggestedMax:30 },
+      y2: { position:'right', grid:{display:false}, title:{display:true,text:'Exposure ($M)',font:{size:10}}, ticks:{callback:v=>v+'M'} },
+      x: { grid:{ display:false }, ticks:{ maxTicksLimit:8 } }
+    }
+  }
+});
+
+// ── PORTFOLIO: PD by Region ───────────────────────────────────
+new Chart(document.getElementById('pd-region-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['Northeast','Southeast','Midwest','Southwest','West','Northwest'],
+    datasets: [{ data:[21.3,19.8,18.1,17.4,16.2,15.7], backgroundColor:'#1355D4', borderRadius:6, borderSkipped:false }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, indexAxis:'y',
+    scales: { x:{ grid:{color:'#EEF2F7'}, ticks:{callback:v=>v+'%'} }, y:{grid:{display:false}} }
+  }
+});
+
+// ── PORTFOLIO: LGD by Product ─────────────────────────────────
+new Chart(document.getElementById('lgd-product-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['Student','Standard','Premium','Secured'],
+    datasets: [{ data:[84.2,81.3,78.6,68.4], backgroundColor:['#C8313B','#F97316','#F59E0B','#0D9F6E'], borderRadius:6, borderSkipped:false }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: { y:{ grid:{color:'#EEF2F7'}, ticks:{callback:v=>v+'%'}, min:60, max:90 }, x:{grid:{display:false}} }
+  }
+});
+
+// ── PORTFOLIO: Income Band ────────────────────────────────────
+new Chart(document.getElementById('income-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['<$30K','$30–50K','$50–75K','$75–100K','>$100K'],
+    datasets: [
+      { label:'Avg Utilization', data:[71.2,64.8,55.3,43.1,32.4], backgroundColor:'rgba(19,85,212,0.7)', borderRadius:4, borderSkipped:false },
+      { label:'Del Rate 30+', data:[28.4,22.7,17.1,12.3,8.2], backgroundColor:'rgba(200,49,59,0.7)', borderRadius:4, borderSkipped:false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position:'bottom', labels:{padding:10,boxWidth:10,font:{size:10}} } },
+    scales: { y:{ grid:{color:'#EEF2F7'}, ticks:{callback:v=>v+'%'} }, x:{grid:{display:false}} }
+  }
+});
+
+// ── PORTFOLIO: Payment Behavior ───────────────────────────────
+new Chart(document.getElementById('payment-chart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Full Payment','Min Payment','Partial Payment','No Payment'],
+    datasets: [{ data:[41.3,18.7,18.1,21.9], backgroundColor:['#0D9F6E','#F59E0B','#F97316','#C8313B'], borderWidth:3, borderColor:'#fff' }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'58%',
+    plugins: { legend:{display:true,position:'right',labels:{padding:12,boxWidth:11,font:{size:11}}} }
+  }
+});
+
+// ── DELINQUENCY: Full trend ───────────────────────────────────
+new Chart(document.getElementById('del-trend-full'), {
+  type: 'bar',
+  data: {
+    labels: MONTHS,
+    datasets: [
+      { type:'bar', label:'Exposure ($M)', data: exposure, backgroundColor:'rgba(147,197,253,0.35)', yAxisID:'y2', order:3 },
+      { type:'line', label:'30+ DPD Rate', data: delRates, borderColor:'#C8313B', borderWidth:2.5, pointRadius:3, fill:false, tension:0.4, yAxisID:'y1', order:1 },
+      { type:'line', label:'90+ DPD Rate', data: defRates, borderColor:'#8B5CF6', borderWidth:2, borderDash:[5,3], pointRadius:2, fill:false, tension:0.4, yAxisID:'y1', order:2 }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales: {
+      y1:{position:'left',grid:{color:'#EEF2F7'},title:{display:true,text:'Rate (%)',font:{size:10}},suggestedMax:35},
+      y2:{position:'right',grid:{display:false},ticks:{callback:v=>v+'M'}},
+      x:{grid:{display:false},ticks:{maxTicksLimit:8}}
+    }
+  }
+});
+
+// ── DELINQUENCY: Cure Rate ────────────────────────────────────
+new Chart(document.getElementById('cure-rate-chart'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: [{
+      data: genSmooth(41, 4, 30),
+      borderColor:'#0D9F6E', backgroundColor:'rgba(13,159,110,0.08)',
+      borderWidth:2.5, fill:true, tension:0.4, pointRadius:3
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'%'},suggestedMin:25,suggestedMax:55}, x:{grid:{display:false},ticks:{maxTicksLimit:8}} }
+  }
+});
+
+// ── DELINQUENCY: EWI Chart ────────────────────────────────────
+new Chart(document.getElementById('ewi-chart'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: [
+      { label:'Util Spike', data:genSmooth(8,1.5,30), borderColor:'#F97316', borderWidth:2, fill:false, tension:0.4, pointRadius:2 },
+      { label:'Missed Payment', data:genSmooth(22,2,30), borderColor:'#C8313B', borderWidth:2, fill:false, tension:0.4, pointRadius:2 },
+      { label:'DPD Escalation', data:genSmooth(5,1,30), borderColor:'#8B5CF6', borderWidth:2, fill:false, tension:0.4, pointRadius:2 }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:true,position:'bottom',labels:{padding:10,boxWidth:10,font:{size:10}}} },
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'%'}}, x:{grid:{display:false},ticks:{maxTicksLimit:8}} }
+  }
+});
+
+// ── RISK: PD by Product ───────────────────────────────────────
+new Chart(document.getElementById('pd-product-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['Student','Standard','Premium','Secured'],
+    datasets: [{ data:[21.8,19.3,16.7,13.2], backgroundColor:['#C8313B','#F97316','#F59E0B','#0D9F6E'], borderRadius:6, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'%'}}, x:{grid:{display:false}} }
+  }
+});
+
+// ── RISK: LGD Distribution ────────────────────────────────────
+const lgdBins = Array.from({length:20},(_,i)=>((i*5)+5)+'%');
+const lgdFreq = [12,28,45,62,88,115,142,168,185,198,186,171,152,138,119,96,74,52,31,18];
+new Chart(document.getElementById('lgd-dist-chart'), {
+  type: 'bar',
+  data: {
+    labels: lgdBins,
+    datasets: [{ data: lgdFreq, backgroundColor:'rgba(19,85,212,0.65)', borderRadius:3, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'}}, x:{grid:{display:false},ticks:{maxTicksLimit:8}} }
+  }
+});
+
+// ── RISK: EAD CCF ─────────────────────────────────────────────
+new Chart(document.getElementById('ead-ccf-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['CCF 50%','CCF 75%','CCF 100%'],
+    datasets: [{ data:[5.11,7.66,10.21], backgroundColor:['#93C5FD','#1355D4','#1E40AF'], borderRadius:6, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'B'},title:{display:true,text:'EAD ($B)',font:{size:10}}}, x:{grid:{display:false}} }
+  }
+});
+
+// ── RISK: PD by Utilization ───────────────────────────────────
+new Chart(document.getElementById('pd-util-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['Low <40%','Medium 40–69%','High 70–89%','Critical 90%+'],
+    datasets: [{
+      data: [6.1, 12.8, 22.4, 38.2],
+      backgroundColor: ['#0D9F6E','#F59E0B','#F97316','#C8313B'],
+      borderRadius: 8, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'%'},title:{display:true,text:'PD (%)',font:{size:10}}}, x:{grid:{display:false}} },
+    plugins:{ tooltip:{ callbacks:{ label: ctx=>`PD: ${ctx.raw}%` } } }
+  }
+});
+
+// ── IFRS9: Donut ──────────────────────────────────────────────
+new Chart(document.getElementById('ifrs-donut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Stage 1 — Performing','Stage 2 — Watch','Stage 3 — Impaired'],
+    datasets: [{ data:[24238,16627,9135], backgroundColor:['#0D9F6E','#F59E0B','#C8313B'], borderWidth:3, borderColor:'#fff', hoverOffset:8 }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, cutout:'65%',
+    plugins:{ legend:{display:true,position:'bottom',labels:{padding:14,boxWidth:12,font:{size:11}}} }
+  }
+});
+
+// ── IFRS9: ECL Stage ──────────────────────────────────────────
+new Chart(document.getElementById('ecl-stage-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['Stage 1','Stage 2','Stage 3'],
+    datasets: [{ data:[285,890,1365], backgroundColor:['#0D9F6E','#F59E0B','#C8313B'], borderRadius:8, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'M'},title:{display:true,text:'ECL Reserve ($M)',font:{size:10}}}, x:{grid:{display:false}} }
+  }
+});
+
+// ── IFRS9: PD Score Distribution ─────────────────────────────
+const pdScoreBins = Array.from({length:20},(_,i)=>(i*0.05).toFixed(2));
+const pdScoreFreq = [820,1420,1950,2280,2540,2710,2820,2650,2410,2200,1950,1680,1420,1180,960,780,590,380,220,110];
+new Chart(document.getElementById('pd-dist-chart'), {
+  type: 'bar',
+  data: {
+    labels: pdScoreBins,
+    datasets: [{
+      data: pdScoreFreq,
+      backgroundColor: pdScoreBins.map(v => parseFloat(v) >= 0.60 ? '#C8313B' : parseFloat(v) >= 0.20 ? '#F59E0B' : '#0D9F6E'),
+      borderRadius: 3, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'},title:{display:true,text:'Accounts',font:{size:10}}}, x:{grid:{display:false},title:{display:true,text:'PD Score',font:{size:10}}} },
+    plugins:{
+      annotation:{ annotations:{} },
+      tooltip:{ callbacks:{ label: ctx=>`${ctx.raw.toLocaleString()} accounts` } }
+    }
+  }
+});
+
+// ── EL: Stage Bar ─────────────────────────────────────────────
+new Chart(document.getElementById('el-stage-bar'), {
+  type: 'bar',
+  data: {
+    labels: ['Stage 1','Stage 2','Stage 3'],
+    datasets: [{ data:[285,890,1365], backgroundColor:['#0D9F6E','#F59E0B','#C8313B'], borderRadius:8, borderSkipped:false }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'M'},title:{display:true,text:'Expected Loss ($M)',font:{size:10}}}, x:{grid:{display:false}} }
+  }
+});
+
+// ── EL: ECL Reserve Trend ─────────────────────────────────────
+const eclReserve = genSmooth(2200, 180, 30).map((v,i) => +(v + i*12).toFixed(0));
+new Chart(document.getElementById('ecl-reserve-chart'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: [{
+      data: eclReserve,
+      borderColor:'#8B5CF6', backgroundColor:'rgba(139,92,246,0.08)',
+      borderWidth:2.5, fill:true, tension:0.4, pointRadius:3
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>'$'+v+'M'},title:{display:true,text:'ECL Reserve ($M)',font:{size:10}}}, x:{grid:{display:false},ticks:{maxTicksLimit:8}} }
+  }
+});
+
+// ── ROLL RATE: Heatmap ────────────────────────────────────────
+const rollData = [
+  ['Current',     91.7, 8.3, 0.0, 0.0, 0.0, 0.0],
+  ['1–29 DPD',    41.2, 32.6, 22.4, 3.8, 0.0, 0.0],
+  ['30–59 DPD',   14.8, 18.3, 31.2, 28.6, 7.1, 0.0],
+  ['60–89 DPD',   8.2,  9.4,  14.7, 33.8, 29.4, 4.5],
+  ['90+ DPD',     3.1,  2.8,  4.2,  8.6, 52.4, 28.9],
+  ['Written Off', 2.1,  1.4,  1.8,  2.4, 18.2, 74.1],
+];
+const heatColors = (v) => {
+  if(v >= 70) return '#C8313B';
+  if(v >= 50) return '#D97706';
+  if(v >= 30) return '#F59E0B';
+  if(v >= 15) return '#93C5FD';
+  if(v >= 5)  return '#DBEAFE';
+  return '#F0F4F7';
+};
+const textColor = (v) => v >= 30 ? '#fff' : '#0F1E35';
+const tbody = document.getElementById('heatmap-body');
+rollData.forEach(row => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="row-label">${row[0]}</td>` +
+    row.slice(1).map(v => `<td style="background:${heatColors(v)};color:${textColor(v)}">${v.toFixed(1)}%</td>`).join('');
+  tbody.appendChild(tr);
+});
+
+// ── ROLL RATE: Trend ──────────────────────────────────────────
+new Chart(document.getElementById('roll-trend-chart'), {
+  type: 'line',
+  data: {
+    labels: MONTHS,
+    datasets: [
+      { label:'Roll In (Cur→Del)', data:genSmooth(8.3,1.2,30), borderColor:'#C8313B', borderWidth:2, fill:false, tension:0.4, pointRadius:2 },
+      { label:'Cure Rate (Del→Cur)', data:genSmooth(41.2,4,30), borderColor:'#0D9F6E', borderWidth:2, fill:false, tension:0.4, pointRadius:2 }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:true,position:'bottom',labels:{padding:10,boxWidth:10,font:{size:10}}} },
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'%'}}, x:{grid:{display:false},ticks:{maxTicksLimit:8}} }
+  }
+});
+
+// ── ROLL RATE: Loss Projection ────────────────────────────────
+new Chart(document.getElementById('loss-proj-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['+1 Month','+2 Months','+3 Months'],
+    datasets: [
+      { label:'Base', data:[142,158,171], backgroundColor:'#1355D4', borderRadius:6, borderSkipped:false },
+      { label:'Stress', data:[178,204,228], backgroundColor:'rgba(200,49,59,0.7)', borderRadius:6, borderSkipped:false }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:true,position:'bottom',labels:{padding:10,boxWidth:10,font:{size:10}}} },
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>'$'+v+'M'},title:{display:true,text:'Projected Loss ($M)',font:{size:10}}}, x:{grid:{display:false}} }
+  }
+});
+
+// ── VINTAGE: Curves ───────────────────────────────────────────
+const vintageColors = ['#C8313B','#D97706','#F59E0B','#0D9F6E','#1355D4','#8B5CF6','#06B6D4','#EC4899'];
+const mobs = Array.from({length:24},(_,i)=>i+1);
+const vintageDatasets = [
+  [2022,1],[2022,4],[2022,7],[2022,10],[2023,1],[2023,4],[2023,7],[2023,10]
+].map((cohort, i) => ({
+  label: `${cohort[0]}-${String(cohort[1]).padStart(2,'0')}`,
+  data: mobs.map(mob => +(3 + mob * 0.6 + (Math.random()-0.5)*1.5 + i*0.3).toFixed(2)),
+  borderColor: vintageColors[i], borderWidth: 1.8, fill: false, tension: 0.4,
+  pointRadius: 0, pointHoverRadius: 4
+}));
+
+new Chart(document.getElementById('vintage-chart'), {
+  type: 'line',
+  data: { labels: mobs.map(m=>'MOB '+m), datasets: vintageDatasets },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display:true, position:'right', labels:{padding:10,boxWidth:10,font:{size:10},usePointStyle:true} } },
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'%'},title:{display:true,text:'Cumulative Default Rate (%)',font:{size:10}}}, x:{grid:{display:false},ticks:{maxTicksLimit:12}} }
+  }
+});
+
+// ── VINTAGE: MOB Scorecard ────────────────────────────────────
+new Chart(document.getElementById('vintage-mob-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['2022-Q1','2022-Q2','2022-Q3','2022-Q4','2023-Q1','2023-Q2','2023-Q3','2023-Q4'],
+    datasets: [
+      { label:'MOB 6', data:[3.2,3.4,3.1,3.6,3.3,3.8,3.5,3.9], backgroundColor:'rgba(13,159,110,0.7)', borderRadius:4, borderSkipped:false },
+      { label:'MOB 12', data:[7.8,8.2,7.6,8.9,8.1,9.2,8.6,9.5], backgroundColor:'rgba(245,158,11,0.7)', borderRadius:4, borderSkipped:false },
+      { label:'MOB 24', data:[15.4,16.1,15.2,17.3,16.2,17.8,16.9,18.4], backgroundColor:'rgba(200,49,59,0.7)', borderRadius:4, borderSkipped:false }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:true,position:'bottom',labels:{padding:8,boxWidth:10,font:{size:10}}} },
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'%'}}, x:{grid:{display:false},ticks:{font:{size:10}}} }
+  }
+});
+
+// ── VINTAGE: Early Life ───────────────────────────────────────
+new Chart(document.getElementById('early-life-chart'), {
+  type: 'line',
+  data: {
+    labels: ['MOB 1','MOB 2','MOB 3','MOB 4','MOB 5','MOB 6'],
+    datasets: [
+      { label:'2022 Cohorts', data:[0.4,0.9,1.5,2.2,2.8,3.4], borderColor:'#0D9F6E', borderWidth:2, fill:false, tension:0.3, pointRadius:4 },
+      { label:'2023 Cohorts', data:[0.5,1.1,1.8,2.6,3.3,4.0], borderColor:'#C8313B', borderWidth:2, fill:false, tension:0.3, pointRadius:4 }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:true,position:'bottom',labels:{padding:10,boxWidth:10,font:{size:10}}} },
+    scales:{ y:{grid:{color:'#EEF2F7'},ticks:{callback:v=>v+'%'},title:{display:true,text:'Default Rate (%)',font:{size:10}}}, x:{grid:{display:false}} }
+  }
+});
+
+// ── MODEL: ROC Curve ──────────────────────────────────────────
+// Build a near-perfect ROC curve
+const rocFPR = [0,0.01,0.02,0.03,0.05,0.07,0.10,0.15,0.20,0.30,0.50,0.70,1.0];
+const rocTPR = [0,0.82,0.89,0.92,0.95,0.97,0.98,0.988,0.993,0.996,0.998,0.999,1.0];
+new Chart(document.getElementById('roc-chart'), {
+  type: 'line',
+  data: {
+    datasets: [
+      { label:'Logistic (AUC=0.990)', data: rocFPR.map((x,i)=>({x,y:rocTPR[i]})), borderColor:'#1355D4', borderWidth:2.5, fill:false, tension:0.3, pointRadius:0 },
+      { label:'Random', data:[{x:0,y:0},{x:1,y:1}], borderColor:'#CBD5E0', borderWidth:1.5, borderDash:[5,3], fill:false, pointRadius:0 }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:true,position:'bottom',labels:{padding:10,boxWidth:10,font:{size:10}}} },
+    scales:{
+      x:{type:'linear',min:0,max:1,grid:{color:'#EEF2F7'},title:{display:true,text:'False Positive Rate',font:{size:10}}},
+      y:{min:0,max:1,grid:{color:'#EEF2F7'},title:{display:true,text:'True Positive Rate',font:{size:10}}}
+    }
+  }
+});
+
+// ── MODEL: Feature Importance ─────────────────────────────────
+new Chart(document.getElementById('feature-chart'), {
+  type: 'bar',
+  data: {
+    labels: ['avg_dpd','del_months','max_util','avg_util','avg_rev_bal','avg_pay_ratio'],
+    datasets: [{
+      data: [2.84, 2.41, 1.92, 1.73, 1.28, -1.61],
+      backgroundColor: v => v >= 0 ? 'rgba(200,49,59,0.7)' : 'rgba(13,159,110,0.7)',
+      backgroundColor: [
+        'rgba(200,49,59,0.75)','rgba(200,49,59,0.65)','rgba(245,158,11,0.75)',
+        'rgba(245,158,11,0.65)','rgba(245,158,11,0.55)','rgba(13,159,110,0.75)'
+      ],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false, indexAxis:'y',
+    scales:{
+      x:{grid:{color:'#EEF2F7'},title:{display:true,text:'Standardized Coefficient',font:{size:10}}},
+      y:{grid:{display:false}}
+    }
+  }
+});
+
+// ── Period buttons (cosmetic) ─────────────────────────────────
+document.querySelectorAll('.period-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
