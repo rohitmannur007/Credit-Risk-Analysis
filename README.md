@@ -7,7 +7,7 @@ Here is a clean, copy-paste ready version of your README:
 > SQL (70%) · Python (20%) · Tableau (10%)
 
 **[🌐 Live Interactive Dashboard](https://rohitmannur007.github.io/DASHBORD-html/)**  
-*(All 6 dashboards are hosted and ready to explore — no Tableau installation required.)*
+
 
 ![SQL](https://img.shields.io/badge/SQL-70%25-blue) ![Python](https://img.shields.io/badge/Python-20%25-green) ![Tableau](https://img.shields.io/badge/Tableau-10%25-orange) ![Rows](https://img.shields.io/badge/Data-1.6M%20Rows-purple)
 
