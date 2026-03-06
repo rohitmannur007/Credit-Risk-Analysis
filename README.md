@@ -1,6 +1,4 @@
-Here is a clean, copy-paste ready version of your README:
 
----
 
 # 💳 Credit Card Risk Analytics & Early Default Detection
 > **End-to-End Bank-Grade Portfolio Risk Monitoring**  
@@ -206,6 +204,3 @@ View the live hosted dashboard:
 - Built a logistic regression default prediction model achieving ROC-AUC of 0.99
 - Delivered 6 interactive Tableau dashboards hosted on GitHub Pages covering portfolio risk, delinquency trends, and expected losses
 
----
-
-The fixes made: removed the broken/mixed formatting in the "How to Run" section, fixed the project structure block (it was missing its code fence), cleaned up the Step 1 command that had inconsistent indentation, standardized all section headers, and removed the stray `R` at the very end of the original.
